@@ -22,7 +22,7 @@ import java.util.List;
 
 public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHolder> {
 
-    public static final String IMAGE_URL_BASE_PATH = "http://image.tmdb.org/t/p/w185//";
+    private static final String IMAGE_URL_BASE_PATH = "http://image.tmdb.org/t/p/w185//";
     private Context mContext;
     private List<Movie> mData;
 
@@ -54,8 +54,9 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
             public void onClick(View view) {
                 Intent intent = new Intent(mContext, DetailActivity.class);
 
+                intent.putExtra(DetailActivity.MOVIE_ID, mData.get(position).getId());
                 intent.putExtra(DetailActivity.MOVIE_ORIGINAL_TITLE, mData.get(position).getOriginalTitle());
-                intent.putExtra(DetailActivity.MOVIE_IMAGE_URL, image_url);
+                intent.putExtra(DetailActivity.MOVIE_IMAGE_URL, mData.get(position).getPosterPath());
                 intent.putExtra(DetailActivity.MOVIE_VOTE_AVERAGE, mData.get(position).getVoteAverage());
                 intent.putExtra(DetailActivity.MOVIE_OVERVIEW, mData.get(position).getOverview());
                 intent.putExtra(DetailActivity.MOVIE_RELEASE_DATE, mData.get(position).getReleaseDate());
@@ -68,6 +69,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
 
     @Override
     public int getItemCount() {
+        if(mData == null) return 0;
         return mData.size();
     }
 
@@ -79,8 +81,8 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieViewHol
         public MovieViewHolder(View itemView) {
             super(itemView);
             
-            moviePosterIv = (ImageView) itemView.findViewById(R.id.movie_poster_image_thumbnail_iv);
-            moviesCv = (CardView) itemView.findViewById(R.id.movies_cv);
+            moviePosterIv = itemView.findViewById(R.id.movie_poster_image_thumbnail_iv);
+            moviesCv = itemView.findViewById(R.id.movies_cv);
         }
     }
 }

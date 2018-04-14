@@ -20,6 +20,23 @@
         </activity>
         <activity android:name=".DetailActivity" />
         <activity android:name=".SettingsActivity" />
+        <activity android:name=".ReviewsActivity" />
+        <activity android:name=".TrailersActivity">
+            <intent-filter>
+                <data  android:scheme="http" />
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:mimeType="audio/*"/>
+                <data android:mimeType="application/ogg"/>
+                <data android:mimeType="application/x-ogg"/>
+                <data android:mimeType="application/itunes"/>
+            </intent-filter>
+        </activity>
+        <provider
+            android:authorities="com.example.sahip.moviesapp"
+            android:name="com.example.sahip.moviesapp.database.MovieListProvider"
+            android:exported="true"/>
     </application>
 
 </manifest>

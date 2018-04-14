@@ -2,6 +2,8 @@ package com.example.sahip.moviesapp;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -13,9 +15,12 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.example.sahip.moviesapp.adapters.MovieAdapter;
+import com.example.sahip.moviesapp.database.MovieListContract;
+import com.example.sahip.moviesapp.database.MovielistDbHelper;
 import com.example.sahip.moviesapp.models.Movie;
 import com.example.sahip.moviesapp.models.MovieResponse;
 import com.example.sahip.moviesapp.rest.MovieService;
+import com.example.sahip.moviesapp.rest.RestClient;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -26,18 +31,18 @@ import java.util.prefs.PreferenceChangeListener;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
+
 
 public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
-    public static final String BASE_URL = "http://api.themoviedb.org/3/";
-    private final static String API_KEY="YOUR API KEY";
+    private final static String API_KEY="YOUR API KEY HERE";
 
-    private static Retrofit retrofit = null;
-    List<Movie> movieList;
+    List<Movie> movieList = new ArrayList<>();
+    List<Movie> favoriteList = new ArrayList<>();
     RecyclerView moviesRV;
+    MovieService movieService;
+    SQLiteDatabase mDb;
 
 
     @Override
@@ -45,13 +50,77 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        moviesRV = (RecyclerView) findViewById(R.id.movies_rv);
+        // Initialize db helper class and get a readable database reference
+        MovielistDbHelper movielistDbHelper = new MovielistDbHelper(this);
+        mDb = movielistDbHelper.getReadableDatabase();
+
+        moviesRV = findViewById(R.id.movies_rv);
         moviesRV.setLayoutManager(new GridLayoutManager(this, 2));
 
+
         String sortOrder = setUpSharedPreferences();
-        getMoviesFromAPI(sortOrder);
+        if(sortOrder.equals(getString(R.string.pref_sort_order_favorites_key))){
+            sortByFavoriteMovies();
+        }
+        else{
+            getMoviesFromAPI(sortOrder);
+        }
 
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        String sortOrder = setUpSharedPreferences();
+        if(sortOrder.equals(getString(R.string.pref_sort_order_favorites_key))){
+            sortByFavoriteMovies();
+        }
+        else{
+            getMoviesFromAPI(sortOrder);
+        }
+
+
+    }
+
+    private void sortByFavoriteMovies(){
+        Cursor cursor = getAllFavoriteMovies();
+        createListFromCursor(cursor);
+
+        moviesRV.setAdapter(new MovieAdapter(getApplicationContext(), favoriteList));
+    }
+
+    private void createListFromCursor(Cursor cursor) {
+        if(!favoriteList.isEmpty()) {
+            favoriteList.clear();
+        }
+
+        for(cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
+            Integer movieId = cursor
+                    .getInt(cursor.getColumnIndex(MovieListContract.MovieListEntry.COLUMN_MOVIE_ID));
+            String movieOriginalTitle = cursor
+                    .getString(cursor.getColumnIndex(MovieListContract.MovieListEntry.COLUMN_MOVIE_ORIGINAL_TITLE));
+            String movieImageUrl = cursor
+                    .getString(cursor.getColumnIndex(MovieListContract.MovieListEntry.COLUMN_MOVIE_IMAGE_URL));
+            Double movieVoteAverage = cursor
+                    .getDouble(cursor.getColumnIndex(MovieListContract.MovieListEntry.COLUMN_MOVIE_VOTE_AVERAGE));
+            String movieOverview = cursor
+                    .getString(cursor.getColumnIndex(MovieListContract.MovieListEntry.COLUMN_MOVIE_OVERVIEW));
+            String movieReleaseDate = cursor
+                    .getString(cursor.getColumnIndex(MovieListContract.MovieListEntry.COLUMN_MOVIE_RELEASE_DATE));
+
+            Movie movie = new Movie();
+
+            movie.setId(movieId);
+            movie.setOriginalTitle(movieOriginalTitle);
+            movie.setPosterPath(movieImageUrl);
+            movie.setOverview(movieOverview);
+            movie.setVoteAverage(movieVoteAverage);
+            movie.setReleaseDate(movieReleaseDate);
+
+            favoriteList.add(movie);
+        }
     }
 
     @Override
@@ -94,16 +163,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     }
 
     private void getMoviesFromAPI(String sortOrder) {
-       if(retrofit == null){
-           retrofit = new Retrofit.Builder()
-                   .baseUrl(BASE_URL)
-                   .addConverterFactory(GsonConverterFactory.create())
-                   .build();
-       }
 
-       MovieService movieService = retrofit.create(MovieService.class);
+       movieService =  RestClient.getClient().create(MovieService.class);
         Call<MovieResponse> call;
-
 
        if(sortOrder.equals(getString(R.string.pref_sort_order_top_rated_key))){
           call = movieService.getTopRatedMovies(API_KEY);
@@ -119,8 +181,6 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
            public void onResponse(Call<MovieResponse> call, Response<MovieResponse> response) {
                movieList = response.body().getResults();
                moviesRV.setAdapter(new MovieAdapter(getApplicationContext(), movieList));
-
-
                Log.i(TAG, "Number of movies received: " + movieList.size());
 
            }
@@ -143,8 +203,25 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             String sortOrder =
                     sharedPreferences.getString(key, getString(R.string.pref_sort_order_top_rated_label));
 
-            getMoviesFromAPI(sortOrder);
+            if(sortOrder.equals(getString(R.string.pref_sort_order_favorites_key))){
+                sortByFavoriteMovies();
+            }
+            else{
+                getMoviesFromAPI(sortOrder);
+            }
         }
 
     }
+
+
+    private Cursor getAllFavoriteMovies() {
+        return getContentResolver().query(
+                MovieListContract.MovieListEntry.CONTENT_URI,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
 }

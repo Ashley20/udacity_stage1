@@ -10,14 +10,29 @@
 
     <string name="pref_sort_order_top_rated_label">Top Rated</string>
     <string name="pref_sort_order_popular_label">Popular</string>
+    <string name="pref_sort_order_favorites_label">Favorites</string>
 
     <string name="pref_sort_order_top_rated_key" translatable="false">top_rated</string>
     <string name="pref_sort_order_popular_key" translatable="false">popular</string>
+    <string name="pref_sort_order_favorites_key" translatable="false">favorites</string>
+
     <string name="movie_text">movieTitle</string>
     <string name="vote_average_text">vote average</string>
     <string name="overview_text">overview</string>
     <string name="content_description">Poster image thumbnail</string>
     <string name="release_date_text">Release Date</string>
+    <string name="reviews_text">SEE REVIEWS</string>
+    <string name="review_author_tw">Author</string>
+    <string name="review_content_tw">content</string>
+    <string name="title_activity_reviews">ReviewsActivity</string>
+    <string name="trailers_text">SEE TRAILERS</string>
+    <string name="content_description_play">Play Button</string>
+    <string name="trailers">trailers</string>
+    <string name="content_description_favorite">Add to favorite movies</string>
+    <string name="app_chooser_title">Choose an app to continue</string>
+    <string name="favorite_text">Add to favorites</string>
+    <string name="unfavorite_text">Remove from favorites</string>
+    <string name="movie_poster_contentDescription">Movie poster image</string>
 
 
 </resources>
