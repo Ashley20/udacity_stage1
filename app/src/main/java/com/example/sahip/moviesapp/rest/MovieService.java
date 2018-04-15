@@ -1,5 +1,6 @@
 package com.example.sahip.moviesapp.rest;
 
+import com.example.sahip.moviesapp.BuildConfig;
 import com.example.sahip.moviesapp.models.MovieResponse;
 import com.example.sahip.moviesapp.models.ReviewResponse;
 import com.example.sahip.moviesapp.models.VideoResponse;

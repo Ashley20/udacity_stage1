@@ -32,6 +32,7 @@ public class ReviewsAdapter extends ArrayAdapter<Review> {
         this.reviewList = reviewList;
     }
 
+
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {

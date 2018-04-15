@@ -1,9 +1,11 @@
 package com.example.sahip.moviesapp;
 
 import android.content.Intent;
+import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -20,20 +22,27 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class ReviewsActivity extends AppCompatActivity {
-    private final static String API_KEY="YOUR API KEY HERE";
+    public static final String TAG = ReviewsActivity.class.getSimpleName();
     public final static String MOVIE_ID="movie_id";
+    public static final String LISTVIEW_STATE = "listview_state";
 
     public ListView reviewsLv;
     MovieService movieService;
     ArrayList<Review> reviewList;
+    Parcelable state;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_reviews);
 
-        reviewsLv =  findViewById(R.id.reviews_lv);
+        if(savedInstanceState != null){
+            Log.d(TAG, "trying to restore listview state..");
+            state = savedInstanceState.getParcelable(LISTVIEW_STATE);
+        }
 
+        reviewsLv =  findViewById(R.id.reviews_lv);
         movieService = RestClient.getClient().create(MovieService.class);
 
         Intent intent = getIntent();
@@ -45,14 +54,25 @@ public class ReviewsActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(LISTVIEW_STATE, reviewsLv.onSaveInstanceState());
+        Log.d(TAG, "saving listview state @ onSaveInstance");
+    }
+
     private void getMovieReviews(Integer movieId) {
-        Call<ReviewResponse> call = movieService.getReviews(movieId, API_KEY);
+        Call<ReviewResponse> call = movieService.getReviews(movieId, BuildConfig.THE_MOVIE_DB_API_TOKEN);
         call.enqueue(new Callback<ReviewResponse>() {
             @Override
             public void onResponse(Call<ReviewResponse> call, Response<ReviewResponse> response) {
                 reviewList = new ArrayList<>();
                 reviewList.addAll(response.body().getResults());
                 reviewsLv.setAdapter(new ReviewsAdapter(getApplicationContext(), reviewList));
+                if(state != null){
+                    reviewsLv.onRestoreInstanceState(state);
+                }
+
             }
 
             @Override

@@ -26,7 +26,6 @@ import com.squareup.picasso.Picasso;
 
 public class DetailActivity extends AppCompatActivity {
 
-    private final static String API_KEY="your api";
     public static final String IMAGE_URL_BASE_PATH = "http://image.tmdb.org/t/p/w185//";
 
     public static final String MOVIE_ID = "movie_id";

@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -36,13 +37,14 @@ import retrofit2.Response;
 public class MainActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
-    private final static String API_KEY="YOUR API KEY HERE";
+    public static final String RECYCLER_VIEW_STATE = "recycler_view_state";
 
     List<Movie> movieList = new ArrayList<>();
     List<Movie> favoriteList = new ArrayList<>();
     RecyclerView moviesRV;
     MovieService movieService;
     SQLiteDatabase mDb;
+    Parcelable rvState;
 
 
     @Override
@@ -50,13 +52,16 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        if(savedInstanceState != null){
+            rvState = savedInstanceState.getParcelable(RECYCLER_VIEW_STATE);
+        }
+
         // Initialize db helper class and get a readable database reference
         MovielistDbHelper movielistDbHelper = new MovielistDbHelper(this);
         mDb = movielistDbHelper.getReadableDatabase();
 
         moviesRV = findViewById(R.id.movies_rv);
-        moviesRV.setLayoutManager(new GridLayoutManager(this, 2));
-
+        moviesRV.setLayoutManager(new GridLayoutManager(MainActivity.this, 2));
 
         String sortOrder = setUpSharedPreferences();
         if(sortOrder.equals(getString(R.string.pref_sort_order_favorites_key))){
@@ -67,6 +72,13 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         }
 
 
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        outState.putParcelable(RECYCLER_VIEW_STATE, moviesRV.getLayoutManager().onSaveInstanceState());
     }
 
     @Override
@@ -88,7 +100,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         Cursor cursor = getAllFavoriteMovies();
         createListFromCursor(cursor);
 
-        moviesRV.setAdapter(new MovieAdapter(getApplicationContext(), favoriteList));
+        moviesRV.setAdapter(new MovieAdapter(MainActivity.this, favoriteList));
+        moviesRV.getLayoutManager().onRestoreInstanceState(rvState);
     }
 
     private void createListFromCursor(Cursor cursor) {
@@ -168,10 +181,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
         Call<MovieResponse> call;
 
        if(sortOrder.equals(getString(R.string.pref_sort_order_top_rated_key))){
-          call = movieService.getTopRatedMovies(API_KEY);
+          call = movieService.getTopRatedMovies(BuildConfig.THE_MOVIE_DB_API_TOKEN);
 
        }else {
-          call = movieService.getPopularMovies(API_KEY);
+          call = movieService.getPopularMovies(BuildConfig.THE_MOVIE_DB_API_TOKEN);
 
        }
 
@@ -180,7 +193,9 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
            @Override
            public void onResponse(Call<MovieResponse> call, Response<MovieResponse> response) {
                movieList = response.body().getResults();
-               moviesRV.setAdapter(new MovieAdapter(getApplicationContext(), movieList));
+               moviesRV.setAdapter(new MovieAdapter(MainActivity.this, movieList));
+               moviesRV.getLayoutManager().onRestoreInstanceState(rvState);
+
                Log.i(TAG, "Number of movies received: " + movieList.size());
 
            }

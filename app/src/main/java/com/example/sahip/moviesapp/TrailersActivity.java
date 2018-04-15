@@ -2,6 +2,7 @@ package com.example.sahip.moviesapp;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,18 +27,25 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class TrailersActivity extends AppCompatActivity {
-
-    private final static String API_KEY="your api here";
+    public static final String TAG = TrailersActivity.class.getSimpleName();
+    public static final String LISTVIEW_STATE = "listview_state";
     public static final String MOVIE_ID = "movie_id";
 
     ListView trailersLv;
     ArrayList<Video> videoList;
     MovieService movieService;
+    Parcelable state;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trailers);
+
+        if(savedInstanceState != null){
+            Log.d(TAG, "trying to restore listview state..");
+            state = savedInstanceState.getParcelable(LISTVIEW_STATE);
+        }
+
 
         trailersLv = findViewById(R.id.trailers_lv);
         movieService = RestClient.getClient().create(MovieService.class);
@@ -63,8 +71,15 @@ public class TrailersActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(LISTVIEW_STATE, trailersLv.onSaveInstanceState());
+        Log.d(TAG, "saving listview state @ onSaveInstance");
+    }
+
     private void getMovieVideos(Integer movieId) {
-        Call<VideoResponse> call = movieService.getVideos(movieId, API_KEY);
+        Call<VideoResponse> call = movieService.getVideos(movieId, BuildConfig.THE_MOVIE_DB_API_TOKEN);
         call.enqueue(new Callback<VideoResponse>() {
             @Override
             public void onResponse(Call<VideoResponse> call, Response<VideoResponse> response) {
@@ -72,6 +87,9 @@ public class TrailersActivity extends AppCompatActivity {
                 videoList = new ArrayList<>();
                 videoList.addAll(response.body().getResults());
                 trailersLv.setAdapter(new TrailersAdapter(getApplicationContext(), videoList));
+                if(state != null){
+                    trailersLv.onRestoreInstanceState(state);
+                }
 
             }
 
